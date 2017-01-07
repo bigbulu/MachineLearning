@@ -1,3 +1,5 @@
+from os import listdir
+
 from numpy import *
 import matplotlib
 import matplotlib.pyplot as plt
@@ -80,4 +82,38 @@ def showDatingData():
     plt.show()
 
 
-datingClassTest()
+def img2vector(filename):
+    return_vect = zeros((1, 1024))
+    fr = open(filename)
+    for i in range(32):
+        line_str = fr.readline()
+        for j in range(32):
+            return_vect[0, 32*i+j] = int(line_str[j])
+    return return_vect
+
+def handwritingClassTest():
+    hwLabels = []
+    trainingFileList = listdir('trainingDigits')
+    m = len(trainingFileList)
+    trainingMat = zeros((m, 1024))
+    for i in range(m):
+        fileNameStr = trainingFileList[i]
+        fileStr = fileNameStr.split('.')[0]
+        classNumStr = int(fileStr.split('_')[0])
+        hwLabels.append(classNumStr)
+        trainingMat[i,:] = img2vector('trainingDigits/%s' % fileNameStr)
+    testFileList = listdir('testDigits')
+    errorCount = 0.0
+    mTest = len(testFileList)
+    for i in range(mTest):
+        fileNameStr = testFileList[i]
+        fileStr = fileNameStr.split('.')[0]
+        classNumStr = int(fileStr.split('_')[0])
+        vectorUnderTest = img2vector('testDigits/%s' % fileNameStr)
+        classifierResult = classify0(vectorUnderTest, trainingMat, hwLabels, 3)
+        if (classifierResult != classNumStr):
+            errorCount += 1.0
+    print "the error rate is: %f" % (errorCount / (float(mTest)))
+
+
+handwritingClassTest()
