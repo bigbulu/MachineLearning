@@ -45,6 +45,24 @@ def retrieveTree(i):
                    {'no surfacing':{0:'no',1:{'flippers':{0:{'head':{0:'no',1:'yes'}},1:'no'}}}}]
     return listOfTrees[i]
 
+def plotMidText(cntrPt, parentPt, txtString):
+    xMid = (parentPt[0] + cntrPt[0]) / 2.0
+    yMid = (parentPt[1] + cntrPt[1]) / 2.0
+    createPlot.ax1.text(xMid, yMid, txtString)
+
+def plotTree(myTree, parentPt, nodeTxt):
+    numLeafs = getNumLeafs(myTree)
+    depth = getTreeDepth(myTree)
+    firstStr = myTree.keys()[0]
+    cntrPt = (plotTree.xOff + (1.0 + float(numLeafs))/2.0/plotTree.totalW,\
+              plotTree.yOff)
+    plotMidText(cntrPt, parentPt, nodeTxt)
+    plotNode(firstStr, cntrPt, parentPt, decisionNode)
+    secondDict = myTree[firstStr]
+    plotTree.yOff = plotTree.yOff - 1.0/plotTree.totalD
+
+
+
 tree = retrieveTree(1)
 a = getNumLeafs(tree)
 b = getTreeDepth(tree)
