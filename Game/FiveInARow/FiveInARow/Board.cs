@@ -1,91 +1,70 @@
-﻿namespace FiveInARow
+﻿using System.Collections.Generic;
+using System.Linq;
+
+namespace FiveInARow
 {
     public class Board
     {
         public BoardStatus[,] Data = new BoardStatus[15, 15];
 
-        private bool HasWinFive(BoardStatus who, int i, int j)
+        public bool? WinOrLost(int i, int j)
         {
-            if (Data[i, j] == who)
+            var result = new List<bool?>();
+            result.Add(WinOrLost(i, j, 1, 0));
+            result.Add(WinOrLost(i, j, 0, 1));
+            result.Add(WinOrLost(i, j, 1, 1));
+            result.Add(WinOrLost(i, j, 1, -1));
+
+            if (result.Any(a => a == false))
             {
-                // from left to right
-                var count = 1;
-                for (int k = i - 1; k >= 0 && Data[k, j] == who; k--)
-                {
-                    count++;
-                }
-                for (int k = i + 1; k < 15 && Data[k, j] == who; k++)
-                {
-                    count++;
-                }
-                if (count == 5 || (count > 5 && who != BoardStatus.Black))
-                {
-                    return true;
-                }
-
-                // from up to down
-                count = 1;
-                for (int k = j - 1; k >= 0 && Data[i, k] == who; k--)
-                {
-                    count++;
-                }
-                for (int k = j + 1; k < 15 && Data[i, k] == who; k++)
-                {
-                    count++;
-                }
-                if (count == 5 || (count > 5 && who != BoardStatus.Black))
-                {
-                    return true;
-                }
-
-                // from left-up to down-right
-                count = 1;
-                for (int k = 1; i - k >= 0 && j - k >= 0 && Data[i - k, j - k] == who; k++)
-                {
-                    count++;
-                }
-                for (int k = 1; i + k < 15 && j + k < 15 && Data[i + k, j + k] == who; k++)
-                {
-                    count++;
-                }
-                if (count == 5 || (count > 5 && who != BoardStatus.Black))
-                {
-                    return true;
-                }
-
-                // from left-down to up-right
-                count = 1;
-                for (int k = 1; i + k < 15 && j - k >= 0 && Data[i + k, j - k] == who; k++)
-                {
-                    count++;
-                }
-                for (int k = 1; i - k >= 0 && j + k < 15 && Data[i - k, j + k] == who; k++)
-                {
-                    count++;
-                }
-                if (count == 5 || (count > 5 && who != BoardStatus.Black))
-                {
-                    return true;
-                }
+                return false;
             }
-            return false;
+            if (result.Any(a => a == true))
+            {
+                return true;
+            }
+            if (IsForbiddenMove(i, j))
+            {
+                return false;
+            }
+            return null;
         }
 
-        private bool IsForbiddenMove(BoardStatus who, int i, int j)
+        private bool? WinOrLost(int i, int j, int operator1, int operator2)
         {
+            var who = Data[i, j];
+            int count = 1;
+            int k = 1;
+            count += Expand(who, i, j, ref k, operator1, operator2, -1);
+            k = 1;
+            count += Expand(who, i, j, ref k, -operator1, -operator2, -1);
+            if (count == 5)
+            {
+                return true;
+            }
+            if (count > 5)
+            {
+                return who != BoardStatus.Black;
+            }
+            return null;
+        }
+
+        private bool IsForbiddenMove(int i, int j)
+        {
+            var who = Data[i, j];
             if (who == BoardStatus.White)
             {
                 return false;
             }
-            
-            // check normal 3
-            if (NormalCount(who, i, j, 3, 2) + JumpThreeCount(who, i, j) >= 2)
+
+            // check 3
+            if (NormalCount(who, i, j, 3, 3) + JumpCount(who, i, j, 3, 2) >= 2)
             {
                 return true;
             }
 
             // check 4
-            if (NormalCount(who, i, j, 4, 1) + JumpFourCount(who, i, j) >= 2)
+            if (NormalCount(who, i, j, 4, 2) + JumpCount(who, i, j, 4, 1) >= 2)
             {
                 return true;
             }
@@ -96,155 +75,109 @@
         private int NormalCount(BoardStatus who, int i, int j, int number, int emptyCount)
         {
             int result = 0;
-            int empty = 0;
             // from left to right
-            var count = 1;
-            int k;
-            for (k = i - 1; k >= 0 && Data[k, j] == who; k--)
-            {
-                count++;
-            }
-            for (empty = 0; k >= 0 && Data[k, j] == BoardStatus.Empty; k--)
-            {
-                empty++;
-                if (empty == emptyCount)
-                {
-                    break;
-                }
-            }
-            if (empty == emptyCount)
-            {
-                for (k = i + 1; k < 15 && Data[k, j] == who; k++)
-                {
-                    count++;
-                }
-                for (empty = 0; k < 15 && Data[k, j] == BoardStatus.Empty; k++)
-                {
-                    empty++;
-                    if (empty == emptyCount)
-                    {
-                        break;
-                    }
-                }
-            }
-            if (empty == emptyCount && count == number)
-            {
-                result++;
-            }
-
+            result += DirectExpand(who, i, j, 1, 0, emptyCount, number);
             // from up to down
-            count = 1;
-            for (k = j - 1; k >= 0 && Data[i, k] == who; k--)
-            {
-                count++;
-            }
-            for (empty = 0; k >= 0 && Data[i, k] == BoardStatus.Empty; k--)
-            {
-                empty++;
-                if (empty == emptyCount)
-                {
-                    break;
-                }
-            }
-            if (empty == emptyCount)
-            {
-                for (k = j + 1; k < 15 && Data[i, k] == who; k++)
-                {
-                    count++;
-                }
-                for (empty = 0; k < 15 && Data[i, k] == BoardStatus.Empty; k++)
-                {
-                    empty++;
-                    if (empty == emptyCount)
-                    {
-                        break;
-                    }
-                }
-            }
-            if (empty == emptyCount && count == number)
-            {
-                result++;
-            }
-
+            result += DirectExpand(who, i, j, 0, 1, emptyCount, number);
             // from left-up to down-right
-            count = 1;
-            for (k = 1; i - k >= 0 && j - k >= 0 && Data[i - k, j - k] == who; k++)
-            {
-                count++;
-            }
-            for (empty = 0; i - k >= 0 && j - k >= 0 && Data[i - k, j - k] == BoardStatus.Empty; k++)
-            {
-                empty++;
-                if (empty == emptyCount)
-                {
-                    break;
-                }
-            }
-            if (empty == emptyCount)
-            {
-                for (k = 1; i + k < 15 && j + k < 15 && Data[i + k, j + k] == who; k++)
-                {
-                    count++;
-                }
-                for (empty = 0; i + k < 15 && j + k < 15 && Data[i + k, j + k] == BoardStatus.Empty; k++)
-                {
-                    empty++;
-                    if (empty == emptyCount)
-                    {
-                        break;
-                    }
-                }
-            }
-            if (empty == emptyCount && count == number)
-            {
-                result++;
-            }
-
+            result += DirectExpand(who, i, j, 1, 1, emptyCount, number);
             // from left-down to up-right
-            count = 1;
-            for (k = 1; i + k < 15 && j - k >= 0 && Data[i + k, j - k] == who; k++)
+            result += DirectExpand(who, i, j, 1, -1, emptyCount, number);
+            return result;
+        }
+
+        private bool IsPositionValid(int position)
+        {
+            return position >= 0 && position < 15;
+        }
+
+        private int DirectExpand(BoardStatus who, int i, int j, int operator1, int operator2, int emptyCount, int number)
+        {
+            int empty = 0;
+            int count = 1;
+            int k;
+            k = 1;
+            count += Expand(who, i, j, ref k, operator1, operator2, -1);
+            empty += Expand(BoardStatus.Empty, i, j, ref k, operator1, operator2, emptyCount - 1);
+            if (empty > 0)
+            {
+                k = 1;
+                count += Expand(who, i, j, ref k, -operator1, -operator2, -1);
+                empty += Expand(BoardStatus.Empty, i, j, ref k, -operator1, -operator2, emptyCount - empty);
+            }
+            return (empty == emptyCount && count == number) ? 1 : 0;
+        }
+
+        private int JumpCount(BoardStatus who, int i, int j, int count, int emptyCount)
+        {
+            var result = 0;
+            result += JumpExpand(who, i, j, 1, 0, emptyCount, count);
+            result += JumpExpand(who, i, j, 0, 1, emptyCount, count);
+            result += JumpExpand(who, i, j, 1, 1, emptyCount, count);
+            result += JumpExpand(who, i, j, 1, -1, emptyCount, count);
+            return result;
+        }
+
+        private int Expand(BoardStatus who, int i, int j, ref int k, int operator1, int operator2, int number)
+        {
+            int pos1, pos2;
+            int count = 0;
+            for (pos1 = i + operator1 * k, pos2 = j + operator2 * k;
+                IsPositionValid(pos1) && IsPositionValid(pos2) && Data[pos1, pos2] == who;
+                k++, pos1 = i + operator1 * k, pos2 = j + operator2 * k)
             {
                 count++;
-            }
-            for (empty = 0; i + k < 15 && j - k >= 0 && Data[i + k, j - k] == BoardStatus.Empty; k++)
-            {
-                empty++;
-                if (empty == emptyCount)
+                if (count == number)
                 {
+                    k++;
                     break;
                 }
             }
-            if (empty == emptyCount)
-            {
-                for (k = 1; i - k >= 0 && j + k < 15 && Data[i - k, j + k] == who; k++)
-                {
-                    count++;
-                }
-                for (empty = 0; i - k >= 0 && j + k < 15 && Data[i - k, j + k] == BoardStatus.Empty; k++)
-                {
-                    empty++;
-                    if (empty == emptyCount)
-                    {
-                        break;
-                    }
-                }
-            }
-            if (empty == emptyCount && count == number)
-            {
-                result++;
-            }
-            return result;
+            return count;
         }
 
-        private int JumpThreeCount(BoardStatus who, int i, int j)
+        private int JumpExpand(BoardStatus who, int i, int j, int operator1, int operator2, int emptyCount, int number)
         {
-            int result = 0;
-            return result;
-        }
+            int count = 1, result = 0;
+            int k, jumpCount1 = 0, jumpCount2 = 0;
+            bool jumpCount1HasEmpty = false, jumpCount2HasEmpty = false, hasEmpty1 = false, hasEmpty2 = false;
+            k = 1;
+            count += Expand(who, i, j, ref k, operator1, operator2, -1);
+            hasEmpty1 = Expand(BoardStatus.Empty, i, j, ref k, operator1, operator2, 1) == 1;
+            if (hasEmpty1)
+            {
+                jumpCount1 = Expand(who, i, j, ref k, operator1, operator2, -1);
+                jumpCount1HasEmpty = Expand(BoardStatus.Empty, i, j, ref k, operator1, operator2, 1) == 1;
+            }
 
-        private int JumpFourCount(BoardStatus who, int i, int j)
-        {
-            int result = 0;
+            k = 1;
+            count += Expand(who, i, j, ref k, -operator1, -operator2, -1);
+            hasEmpty2 = Expand(BoardStatus.Empty, i, j, ref k, -operator1, -operator2, 1) == 1;
+            if (hasEmpty2)
+            {
+                jumpCount2 = Expand(who, i, j, ref k, -operator1, -operator2, -1);
+                jumpCount2HasEmpty = Expand(BoardStatus.Empty, i, j, ref k, -operator1, -operator2, 1) == 1;
+            }
+
+            if (jumpCount1 != 0 && ((emptyCount == 2 && jumpCount1HasEmpty && hasEmpty2) || (emptyCount == 1 && (jumpCount1HasEmpty || hasEmpty2))))
+            {
+                if (count + jumpCount1 == number)
+                {
+                    result++;
+                }
+            }
+            if (count == 3 && result > 0)
+            {
+                return result;
+            }
+
+            if (jumpCount2 != 0 && ((emptyCount == 2 && jumpCount2HasEmpty && hasEmpty1) || (emptyCount == 1 && (jumpCount2HasEmpty || hasEmpty1))))
+            {
+                if (count + jumpCount2 == number)
+                {
+                    result++;
+                }
+            }
             return result;
         }
     }
