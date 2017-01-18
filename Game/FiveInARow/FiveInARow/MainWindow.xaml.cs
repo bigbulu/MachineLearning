@@ -23,6 +23,7 @@ namespace FiveInARow
         private Board _boardModel;
         private Rectangle _adorner = new Rectangle() { Width = 40, Height = 40, Stroke = Brushes.AliceBlue, StrokeThickness = 1 };
         private BoardStatus _currentPlayer;
+        private bool _isEnd;
 
         public MainWindow()
         {
@@ -38,6 +39,7 @@ namespace FiveInARow
             PaintDots();
             _currentPlayer = BoardStatus.Black;
             _boardModel = new Board();
+            _isEnd = false;
         }
 
         private void PaintGridLine()
@@ -87,6 +89,11 @@ namespace FiveInARow
 
         private void _board_PreviewMouseMove(object sender, MouseEventArgs e)
         {
+            if (_isEnd)
+            {
+                return;
+            }
+
             var point = e.GetPosition(_board);
             int i, j;
             GetPoint(point, out i, out j);
@@ -117,6 +124,11 @@ namespace FiveInARow
 
         private void _board_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (_isEnd)
+            {
+                return;
+            }
+
             var point = e.GetPosition(_board);
             int i, j;
             GetPoint(point, out i, out j);
@@ -128,6 +140,11 @@ namespace FiveInARow
 
         private void CreateChessPiece(int i, int j)
         {
+            if (_isEnd)
+            {
+                return;
+            }
+
             var chessPiece = new Ellipse()
             {
                 Width = 30,
@@ -140,18 +157,20 @@ namespace FiveInARow
             Canvas.SetTop(chessPiece, 35 + 40 * j);
             _board.Children.Add(chessPiece);
 
+            _boardModel.Data[i, j] = _currentPlayer;
             _currentPlayer = _currentPlayer == BoardStatus.Black ? BoardStatus.White : BoardStatus.Black;
             _adorner.Stroke = _currentPlayer == BoardStatus.Black ? Brushes.Black : Brushes.White;
-
+            
             var result = _boardModel.WinOrLost(i, j);
             if (result == true)
             {
                 MessageBox.Show("player: " + _boardModel.Data[i, j] + " has win!");
+                _isEnd = true;
             }
             else if (result == false)
             {
-
                 MessageBox.Show("player: " + _boardModel.Data[i, j] + " has lost!");
+                _isEnd = true;
             }
         }
 

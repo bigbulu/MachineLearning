@@ -105,7 +105,10 @@ namespace FiveInARow
                 count += Expand(who, i, j, ref k, -operator1, -operator2, -1);
                 empty += Expand(BoardStatus.Empty, i, j, ref k, -operator1, -operator2, emptyCount - empty);
             }
-            return (empty == emptyCount && count == number) ? 1 : 0;
+            var result = (empty == emptyCount && count == number) ? 1 : 0;
+            if (number != 3 || JumpExpand(who, i, j, operator1, operator2, 1, 4) < result)
+                return result;
+            return 0;
         }
 
         private int JumpCount(BoardStatus who, int i, int j, int count, int emptyCount)
@@ -178,7 +181,7 @@ namespace FiveInARow
                     result++;
                 }
             }
-            return result;
+            return number == 3 && result > 0 ? 1 : result;
         }
     }
 
