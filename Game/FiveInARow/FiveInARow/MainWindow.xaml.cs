@@ -97,7 +97,7 @@ namespace FiveInARow
             var point = e.GetPosition(_board);
             int i, j;
             GetPoint(point, out i, out j);
-            if (i >= 0 && j >= 0 && _boardModel.Data[i,j] == BoardStatus.Empty)
+            if (i >= 0 && j >= 0 && _boardModel.Data[i, j] == BoardStatus.Empty)
             {
                 MoveAdorner(i, j);
             }
@@ -136,6 +136,8 @@ namespace FiveInARow
             {
                 CreateChessPiece(i, j);
             }
+
+            ComputerGoIfItsTurn();
         }
 
         private void CreateChessPiece(int i, int j)
@@ -160,7 +162,7 @@ namespace FiveInARow
             _boardModel.Data[i, j] = _currentPlayer;
             _currentPlayer = _currentPlayer == BoardStatus.Black ? BoardStatus.White : BoardStatus.Black;
             _adorner.Stroke = _currentPlayer == BoardStatus.Black ? Brushes.Black : Brushes.White;
-            
+
             var result = _boardModel.WinOrLost(i, j);
             if (result == true)
             {
@@ -177,6 +179,21 @@ namespace FiveInARow
         private void StartGameButton_Click(object sender, RoutedEventArgs e)
         {
             Initialize();
+
+            ComputerGoIfItsTurn();
+        }
+
+        private void ComputerGoIfItsTurn()
+        {
+            if (!_isEnd)
+            {
+                if ((_computerUseBlack.IsChecked == true && _currentPlayer == BoardStatus.Black) ||
+                    (_computerUseBlack.IsChecked == false && _currentPlayer == BoardStatus.White))
+                {
+                    var point = Algorithm.GetBestMove(_currentPlayer, _boardModel);
+                    CreateChessPiece(point.i, point.j);
+                }
+            }
         }
     }
 }

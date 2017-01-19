@@ -183,6 +183,38 @@ namespace FiveInARow
             }
             return number == 3 && result > 0 ? 1 : result;
         }
+
+        private readonly int Five = 100000000;
+        private readonly int GreatFour = 100000;
+        private readonly int Four = 1000;
+        private readonly int Three = 500;
+        private readonly int Two = 10;
+
+        public int GetCurrentPoint()
+        {
+            int result = 0;
+            
+            for (int i = 0; i < 15; i++)
+            {
+                for (int j = 0; j < 15; j++)
+                {
+                    if (Data[i, j] != BoardStatus.Empty)
+                    {
+                        int pointOperator = Data[i, j] == BoardStatus.Black ? 1 : -1;
+                        if (NormalCount(Data[i, j], i, j, 5, 0) > 0)
+                        {
+                            return Five * pointOperator;
+                        }
+
+                        result += NormalCount(Data[i, j], i, j, 4, 1) * pointOperator;
+                        result += NormalCount(Data[i, j], i, j, 3, 2) * pointOperator;
+                        result += NormalCount(Data[i, j], i, j, 2, 3) * pointOperator;
+                    }
+                }
+            }
+
+            return result;
+        }
     }
 
     public enum BoardStatus
