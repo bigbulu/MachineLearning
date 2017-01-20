@@ -8,6 +8,23 @@ namespace FiveInARow
     {
         public BoardStatus[,] Data = new BoardStatus[15, 15];
 
+        public int[,] shouldCheck = new int[15, 15];
+
+        public void Set(int i, int j, BoardStatus who)
+        {
+            Data[i, j] = who;
+            var plus = who == BoardStatus.Empty ? -1 : 1;
+            for (int m = -2; m <= 2; m++)
+            {
+                if (i + m < 0 || i + m >= 15) continue;
+                for (int n = -2; n <= 2; n++)
+                {
+                    if (j + n < 0 || j + n >= 15) continue;
+                    shouldCheck[i + m, j + n] += plus;
+                }
+            }
+        }
+
         public bool? WinOrLost(int i, int j)
         {
             var result = new List<bool?>();
@@ -194,7 +211,7 @@ namespace FiveInARow
         {
             int result = 0;
             int blackFour = 0, blackThree = 0, whiteFour = 0, whiteThree = 0;
-            
+
             for (int i = 0; i < 15; i++)
             {
                 for (int j = 0; j < 15; j++)

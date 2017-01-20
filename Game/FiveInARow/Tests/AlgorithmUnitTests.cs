@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FiveInARow;
 
@@ -49,7 +50,8 @@ namespace Tests
             board.Data[12, 12] = BoardStatus.Black;
 
             int score;
-            bestMove = Algorithm.GetBestMove(BoardStatus.White, board, 2, out score);
+            var cache = new Dictionary<int, int>();
+            bestMove = Algorithm.GetBestMove(BoardStatus.White, board, 2, cache, out score);
             Assert.AreEqual(13, bestMove.i);
             Assert.AreEqual(13, bestMove.j);
         }
@@ -75,7 +77,8 @@ namespace Tests
             board.Data[12, 12] = BoardStatus.Black;
 
             int score;
-            bestMove = Algorithm.GetBestMove(BoardStatus.White, board, 2, out score);
+            var cache = new Dictionary<int, int>();
+            bestMove = Algorithm.GetBestMove(BoardStatus.White, board, 2, cache, out score);
             Assert.AreEqual(13, bestMove.i);
             Assert.AreEqual(13, bestMove.j);
         }

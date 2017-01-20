@@ -9,10 +9,15 @@ namespace FiveInARow
 {
     public static class Algorithm
     {
+        private static int total = 0;
+        private static int calculate = 0;
+
         public static BoardPosition GetBestMove(BoardStatus who, Board board)
         {
             int score = 0;
-            var boardPosition = GetBestMove(who, board, 2, out score);
+            total = 0; calculate = 0;
+            var cache = new Dictionary<int, int>();
+            var boardPosition = GetBestMove(who, board, 4, cache, out score);
             if (boardPosition.i == 0 && boardPosition.j == 0 && score == 0)
             {
                 boardPosition.i = 7;
@@ -29,10 +34,12 @@ namespace FiveInARow
                     return boardPosition;
                 }
             }
+            Debug.Print(string.Format("Total: {0} Skip:{1} Rate:{2} Score:{3}",
+                total, (total - calculate), (total - calculate) * 1.0 / total, score));
             return boardPosition;
         }
 
-        public static BoardPosition GetBestMove(BoardStatus who, Board board, int depth, out int score)
+        public static BoardPosition GetBestMove(BoardStatus who, Board board, int depth, Dictionary<int, int> cache, out int score)
         {
             BoardPosition boardPosition = new BoardPosition();
             var defaultPoint = board.GetCurrentPoint();
@@ -46,14 +53,15 @@ namespace FiveInARow
                 Debug.Print(defaultPoint.ToString());
             }
             List<KeyValuePair<BoardPosition, int>> resultCandidate = new List<KeyValuePair<BoardPosition, int>>();
-            
+
+            total += 15 * 15;
             for (int i = 0; i < 15; i++)
             {
                 for (int j = 0; j < 15; j++)
                 {
-                    if (board.Data[i, j] == BoardStatus.Empty)
+                    if (board.Data[i, j] == BoardStatus.Empty && board.shouldCheck[i, j] > 0)
                     {
-                        board.Data[i, j] = who;
+                        board.Set(i, j, who);
                         var point = board.GetCurrentPoint();
                         if ((who == BoardStatus.Black && point > defaultPoint) || (who == BoardStatus.White && point < defaultPoint))
                         {
@@ -61,7 +69,17 @@ namespace FiveInARow
                             boardPosition.j = j;
                             resultCandidate.Add(new KeyValuePair<BoardPosition, int>(boardPosition, point));
                         }
-                        board.Data[i, j] = BoardStatus.Empty;
+                        board.Set(i, j, BoardStatus.Empty);
+                        calculate++;
+
+                        if (depth == 1)
+                        {
+                            if (SkipRemainingItems(cache, who == BoardStatus.White, depth, point))
+                            {
+                                score = point;
+                                return boardPosition;
+                            }
+                        }
                     }
                 }
             }
@@ -71,21 +89,29 @@ namespace FiveInARow
                 return boardPosition;
             }
 
+            int k = 0;
+            total += resultCandidate.Count;
             if (who == BoardStatus.Black)
             {
                 resultCandidate.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
                 if (depth > 1)
                 {
-                    for (int i = 0; i < resultCandidate.Count; i++)
+                    for (k = 0; k < resultCandidate.Count; k++)
                     {
-                        var current = resultCandidate[i];
-                        board.Data[current.Key.i, current.Key.j] = BoardStatus.Black;
+                        var current = resultCandidate[k];
+                        board.Set(current.Key.i, current.Key.j, BoardStatus.Black);
 
                         int subScore;
-                        GetBestMove(BoardStatus.White, board, depth - 1, out subScore);
-                        resultCandidate[i] = new KeyValuePair<BoardPosition, int>(resultCandidate[i].Key, subScore);
+                        GetBestMove(BoardStatus.White, board, depth - 1, cache, out subScore);
+                        resultCandidate[k] = new KeyValuePair<BoardPosition, int>(resultCandidate[k].Key, subScore);
+                        calculate++;
+                        board.Set(current.Key.i, current.Key.j, BoardStatus.Empty);
 
-                        board.Data[current.Key.i, current.Key.j] = BoardStatus.Empty;
+                        if (SkipRemainingItems(cache, true, depth, subScore))
+                        {
+                            k++;
+                            break;
+                        }
                     }
                 }
             }
@@ -94,37 +120,75 @@ namespace FiveInARow
                 resultCandidate.Sort((a, b) => { return a.Value.CompareTo(b.Value); });
                 if (depth > 1)
                 {
-                    for (int i = 0; i < resultCandidate.Count; i++)
+                    for (k = 0; k < resultCandidate.Count; k++)
                     {
-                        var current = resultCandidate[i];
-                        board.Data[current.Key.i, current.Key.j] = BoardStatus.White;
+                        var current = resultCandidate[k];
+                        board.Set(current.Key.i, current.Key.j, BoardStatus.White);
 
                         int subScore;
-                        GetBestMove(BoardStatus.Black, board, depth - 1, out subScore);
-                        resultCandidate[i] = new KeyValuePair<BoardPosition, int>(resultCandidate[i].Key, subScore);
+                        GetBestMove(BoardStatus.Black, board, depth - 1, cache, out subScore);
+                        resultCandidate[k] = new KeyValuePair<BoardPosition, int>(resultCandidate[k].Key, subScore);
+                        calculate++;
+                        board.Set(current.Key.i, current.Key.j, BoardStatus.Empty);
 
-                        board.Data[current.Key.i, current.Key.j] = BoardStatus.Empty;
+                        if (SkipRemainingItems(cache, true, depth, subScore))
+                        {
+                            k++;
+                            break;
+                        }
                     }
                 }
             }
-            
-            var retValue = GetBest(resultCandidate, who);
+
+            var retValue = GetBest(resultCandidate, who, k == 0 ? resultCandidate.Count : k);
             score = retValue.Value;
+            cache.Remove(depth);
+            UpdateParentValue(cache, who == BoardStatus.White, depth, score);
             return retValue.Key;
         }
 
-        private static KeyValuePair<BoardPosition, int> GetBest(List<KeyValuePair<BoardPosition, int>> candidate, BoardStatus who)
+        private static void UpdateParentValue(Dictionary<int, int> cache, bool isMinThisTurn, int depth, int score)
+        {
+            var parentDepth = depth + 1;
+            if (!cache.ContainsKey(parentDepth))
+            {
+                cache[parentDepth] = score;
+            }
+            else if (isMinThisTurn ? score > cache[parentDepth] : score < cache[parentDepth])
+            {
+                cache[parentDepth] = score;
+            }
+        }
+
+        private static bool SkipRemainingItems(Dictionary<int, int> cache, bool isMinThisTurn, int depth, int score)
+        {
+            if (!cache.ContainsKey(depth))
+            {
+                cache[depth] = score;
+            }
+            else
+            {
+                if (cache.ContainsKey(depth + 1) &&
+                    (isMinThisTurn ? score <= cache[depth + 1] : score >= cache[depth + 1]))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static KeyValuePair<BoardPosition, int> GetBest(List<KeyValuePair<BoardPosition, int>> candidate, BoardStatus who, int k)
         {
             int? score = null;
             BoardPosition position = new BoardPosition();
-            for (int i = 0; i < candidate.Count; i++)
+            for (int i = 0; i < k; i++)
             {
                 if (score == null)
                 {
                     score = candidate[i].Value;
                     position = candidate[i].Key;
                 }
-                else if ((who == BoardStatus.Black && candidate[i].Value > score )
+                else if ((who == BoardStatus.Black && candidate[i].Value > score)
                     || (who == BoardStatus.White && candidate[i].Value < score))
                 {
                     score = candidate[i].Value;

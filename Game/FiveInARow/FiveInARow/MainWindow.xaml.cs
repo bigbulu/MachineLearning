@@ -160,7 +160,7 @@ namespace FiveInARow
             Canvas.SetTop(chessPiece, 35 + 40 * j);
             _board.Children.Add(chessPiece);
 
-            _boardModel.Data[i, j] = _currentPlayer;
+            _boardModel.Set(i, j, _currentPlayer);
             MoveAdorner(i, j, _lastMoveAdorner);
             _currentPlayer = _currentPlayer == BoardStatus.Black ? BoardStatus.White : BoardStatus.Black;
             _adorner.Stroke = _currentPlayer == BoardStatus.Black ? Brushes.Black : Brushes.White;
