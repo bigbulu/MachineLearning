@@ -109,10 +109,10 @@ namespace Tests
             board.Data[10, 10] = BoardStatus.White;
             board.Data[11, 11] = BoardStatus.White;
 
-            Assert.AreEqual(-Board.Four *4, board.GetCurrentPoint());
+            Assert.AreEqual(-Board.Four, board.GetCurrentPoint());
 
             board.Data[7, 7] = BoardStatus.Empty;
-            Assert.AreEqual(-Board.GreatFour * 4 - Board.Four * 4, board.GetCurrentPoint());
+            Assert.AreEqual(-Board.GreatFour - Board.Four, board.GetCurrentPoint());
         }
     }
 }

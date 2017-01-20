@@ -12,7 +12,7 @@ namespace FiveInARow
         public static BoardPosition GetBestMove(BoardStatus who, Board board)
         {
             int score = 0;
-            var boardPosition = GetBestMove(who, board, 4, out score);
+            var boardPosition = GetBestMove(who, board, 2, out score);
             if (boardPosition.i == 0 && boardPosition.j == 0 && score == 0)
             {
                 boardPosition.i = 7;
@@ -76,7 +76,7 @@ namespace FiveInARow
                 resultCandidate.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
                 if (depth > 1)
                 {
-                    for (int i = 0; i < resultCandidate.Count && i < 5; i++)
+                    for (int i = 0; i < resultCandidate.Count; i++)
                     {
                         var current = resultCandidate[i];
                         board.Data[current.Key.i, current.Key.j] = BoardStatus.Black;
@@ -94,7 +94,7 @@ namespace FiveInARow
                 resultCandidate.Sort((a, b) => { return a.Value.CompareTo(b.Value); });
                 if (depth > 1)
                 {
-                    for (int i = 0; i < resultCandidate.Count && i < 5; i++)
+                    for (int i = 0; i < resultCandidate.Count; i++)
                     {
                         var current = resultCandidate[i];
                         board.Data[current.Key.i, current.Key.j] = BoardStatus.White;
@@ -117,7 +117,7 @@ namespace FiveInARow
         {
             int? score = null;
             BoardPosition position = new BoardPosition();
-            for (int i = 0; i < 5 && i < candidate.Count; i++)
+            for (int i = 0; i < candidate.Count; i++)
             {
                 if (score == null)
                 {

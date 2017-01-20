@@ -193,6 +193,7 @@ namespace FiveInARow
         public int GetCurrentPoint()
         {
             int result = 0;
+            int blackFour = 0, blackThree = 0, whiteFour = 0, whiteThree = 0;
             
             for (int i = 0; i < 15; i++)
             {
@@ -206,15 +207,40 @@ namespace FiveInARow
                             return Five * pointOperator;
                         }
 
-                        result += NormalCount(Data[i, j], i, j, 4, 2) * pointOperator * GreatFour;
-                        result += NormalCount(Data[i, j], i, j, 4, 1) * pointOperator * Four;
-                        result += JumpCount(Data[i, j], i, j, 4, 1) * pointOperator * Four;
-                        result += NormalCount(Data[i, j], i, j, 3, 2) * pointOperator * Three;
-                        result += JumpCount(Data[i, j], i, j, 3, 2) * pointOperator * Three;
+                        result += NormalCount(Data[i, j], i, j, 4, 2) * pointOperator * GreatFour / 4;
+                        if (pointOperator > 0)
+                        {
+                            blackFour += NormalCount(Data[i, j], i, j, 4, 1) + JumpCount(Data[i, j], i, j, 4, 1);
+                            blackThree += NormalCount(Data[i, j], i, j, 3, 2) + JumpCount(Data[i, j], i, j, 3, 2);
+                        }
+                        else
+                        {
+                            whiteFour += NormalCount(Data[i, j], i, j, 4, 1) + JumpCount(Data[i, j], i, j, 4, 1);
+                            whiteThree += NormalCount(Data[i, j], i, j, 3, 2) + JumpCount(Data[i, j], i, j, 3, 2);
+                        }
                         result += NormalCount(Data[i, j], i, j, 2, 3) * pointOperator * Two;
                         result += JumpCount(Data[i, j], i, j, 2, 3) * pointOperator * Two;
                     }
                 }
+            }
+            blackFour /= 4; blackThree /= 3; whiteFour /= 4; whiteThree /= 3;
+            if (blackFour + blackThree >= 2)
+            {
+                result += GreatFour / 2;
+            }
+            else
+            {
+                result += blackFour * Four;
+                result += blackThree * Three;
+            }
+            if (whiteFour + whiteThree >= 2)
+            {
+                result -= GreatFour / 2;
+            }
+            else
+            {
+                result -= whiteFour * Four;
+                result -= whiteThree * Three;
             }
             return result;
         }
