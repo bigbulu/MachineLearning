@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace FiveInARow
@@ -91,7 +92,7 @@ namespace FiveInARow
             return position >= 0 && position < 15;
         }
 
-        private int DirectExpand(BoardStatus who, int i, int j, int operator1, int operator2, int emptyCount, int number)
+        public int DirectExpand(BoardStatus who, int i, int j, int operator1, int operator2, int emptyCount, int number)
         {
             int empty = 0;
             int count = 1;
@@ -99,16 +100,13 @@ namespace FiveInARow
             k = 1;
             count += Expand(who, i, j, ref k, operator1, operator2, -1);
             empty += Expand(BoardStatus.Empty, i, j, ref k, operator1, operator2, emptyCount - 1);
-            if (empty > 0)
+            if (empty > 0 || emptyCount == 1)
             {
                 k = 1;
                 count += Expand(who, i, j, ref k, -operator1, -operator2, -1);
                 empty += Expand(BoardStatus.Empty, i, j, ref k, -operator1, -operator2, emptyCount - empty);
             }
-            var result = (empty == emptyCount && count == number) ? 1 : 0;
-            if (number != 3 || JumpExpand(who, i, j, operator1, operator2, 1, 4) < result)
-                return result;
-            return 0;
+            return (empty >= emptyCount && count == number) ? 1 : 0;
         }
 
         private int JumpCount(BoardStatus who, int i, int j, int count, int emptyCount)
@@ -121,7 +119,7 @@ namespace FiveInARow
             return result;
         }
 
-        private int Expand(BoardStatus who, int i, int j, ref int k, int operator1, int operator2, int number)
+        public int Expand(BoardStatus who, int i, int j, ref int k, int operator1, int operator2, int number)
         {
             int pos1, pos2;
             int count = 0;
@@ -130,7 +128,7 @@ namespace FiveInARow
                 k++, pos1 = i + operator1 * k, pos2 = j + operator2 * k)
             {
                 count++;
-                if (count == number)
+                if (count >= number && number != -1)
                 {
                     k++;
                     break;
@@ -139,7 +137,7 @@ namespace FiveInARow
             return count;
         }
 
-        private int JumpExpand(BoardStatus who, int i, int j, int operator1, int operator2, int emptyCount, int number)
+        public int JumpExpand(BoardStatus who, int i, int j, int operator1, int operator2, int emptyCount, int number)
         {
             int count = 1, result = 0;
             int k, jumpCount1 = 0, jumpCount2 = 0;
@@ -184,11 +182,13 @@ namespace FiveInARow
             return number == 3 && result > 0 ? 1 : result;
         }
 
-        private readonly int Five = 100000000;
-        private readonly int GreatFour = 100000;
-        private readonly int Four = 1000;
-        private readonly int Three = 500;
-        private readonly int Two = 10;
+        public static readonly int Five = 100000000;
+        public static readonly int GreatFour = 100000;
+        public static readonly int Four = 10000;
+        public static readonly int JumpFour = 5000;
+        public static readonly int Three = 500;
+        public static readonly int JumpThree = 250;
+        public static readonly int Two = 10;
 
         public int GetCurrentPoint()
         {
@@ -206,13 +206,16 @@ namespace FiveInARow
                             return Five * pointOperator;
                         }
 
-                        result += NormalCount(Data[i, j], i, j, 4, 1) * pointOperator;
-                        result += NormalCount(Data[i, j], i, j, 3, 2) * pointOperator;
-                        result += NormalCount(Data[i, j], i, j, 2, 3) * pointOperator;
+                        result += NormalCount(Data[i, j], i, j, 4, 2) * pointOperator * GreatFour;
+                        result += NormalCount(Data[i, j], i, j, 4, 1) * pointOperator * Four;
+                        result += JumpCount(Data[i, j], i, j, 4, 1) * pointOperator * Four;
+                        result += NormalCount(Data[i, j], i, j, 3, 2) * pointOperator * Three;
+                        result += JumpCount(Data[i, j], i, j, 3, 2) * pointOperator * Three;
+                        result += NormalCount(Data[i, j], i, j, 2, 3) * pointOperator * Two;
+                        result += JumpCount(Data[i, j], i, j, 2, 3) * pointOperator * Two;
                     }
                 }
             }
-
             return result;
         }
     }
