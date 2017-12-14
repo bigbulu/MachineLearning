@@ -5,7 +5,7 @@ conn = MySQLdb.connect(host="localhost",
                        db="testdb")
 x = conn.cursor()
 
-for i in range(1, 10):
+for i in range(1, 11):
 
         file = open("F:/DataMining/anonymized_dataset_for_ADM2017/student_log_{}.csv".format(i), "r")
         skip = True
